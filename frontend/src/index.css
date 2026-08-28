@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0B0C10;
+  --color-surface: #1F2833;
+  --color-primary: #C5A880;
+  --color-primaryHover: #DBC3A0;
+  --color-secondary: #45A29E;
+  --color-text: #F8F9FA;
+  --color-muted: #C5C6C7;
+  --color-danger: #E04F5F;
+  --color-success: #4CAF50;
+  --color-warning: #F59E0B;
+  --color-border: #2C3A47;
+  --font-sans: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-background font-medium py-2 px-4 rounded-md hover:bg-primaryHover transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50;
+  }
+  .btn-secondary {
+    @apply bg-surface border border-border text-text font-medium py-2 px-4 rounded-md hover:bg-surface/80 transition-colors focus:outline-none focus:ring-2 focus:ring-muted/50;
+  }
+  .card {
+    @apply bg-surface rounded-xl border border-border p-6 shadow-lg;
+  }
+  .input {
+    @apply bg-background border border-border rounded-md px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+  }
+}
+
+/* Custom Scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0B0C10;
+}
+::-webkit-scrollbar-thumb {
+  background: #2C3A47;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C5A880;
+}
