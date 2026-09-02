@@ -35,7 +35,6 @@ class RecoveryService:
         audit_details = {
             "recommendation": recommendation,
             "policy_evaluation": evaluation,
-            "ai_mode": "live" if ai_service.is_live else "mock",
         }
 
         if not evaluation["approved"]:
@@ -74,17 +73,22 @@ class RecoveryService:
         payment = db.query(Payment).filter(Payment.id == action.payment_id).first()
 
         success = False
+        action_error = None
+        
         if action.action_type == ActionType.SMART_RETRY:
+            # We don't do automatic retry without frontend checkout flow, so it fails or initiates
             success = razorpay_service.initiate_retry(payment)
+            if not success:
+                action_error = "SMART_RETRY requires user interaction or stored token."
         elif action.action_type == ActionType.EMAIL_REMINDER:
-            # Mock email sending
-            success = True
-        elif action.action_type == ActionType.DISCOUNT_OFFER:
-            # Mock discount logic
-            success = True
-        elif action.action_type == ActionType.MANUAL_REVIEW:
-            # Manual review doesn't auto execute
             success = False
+            action_error = "NOT_CONFIGURED: Email provider not integrated."
+        elif action.action_type == ActionType.DISCOUNT_OFFER:
+            success = False
+            action_error = "NOT_CONFIGURED: Discount engine not integrated."
+        elif action.action_type == ActionType.MANUAL_REVIEW:
+            success = False
+            action_error = "Manual review pending."
 
         if success:
             action.status = ActionStatus.EXECUTED
@@ -96,7 +100,11 @@ class RecoveryService:
 
         db.commit()
         
-        self._log_audit(db, "RECOVERY_ACTION", action.id, "ACTION_EXECUTED" if success else "ACTION_FAILED", {"action_type": action.action_type.value, "success": success})
+        audit_details = {"action_type": action.action_type.value, "success": success}
+        if action_error:
+            audit_details["error"] = action_error
+
+        self._log_audit(db, "RECOVERY_ACTION", action.id, "ACTION_EXECUTED" if success else "ACTION_FAILED", audit_details)
 
         return action
 

@@ -65,19 +65,18 @@ class AIService:
                 self._client = _genai.Client(api_key=settings.gemini_api_key)
                 self._configured = True
                 logger.info(
-                    "Gemini client initialised (model=%s). Mock mode: OFF.",
+                    "Gemini client initialised (model=%s).",
                     _GEMINI_MODEL,
                 )
             except Exception as e:
                 logger.error(
-                    "Failed to initialise Gemini client: %s. "
-                    "Falling back to mock mode.",
+                    "Failed to initialise Gemini client: %s.",
                     type(e).__name__,
                 )
         else:
             logger.warning(
                 "GEMINI_API_KEY is not set. "
-                "AI Analysis will run in heuristic/mock mode."
+                "AI Analysis will fail."
             )
 
     # ------------------------------------------------------------------
@@ -86,8 +85,8 @@ class AIService:
 
     @property
     def is_live(self) -> bool:
-        """True when a real Gemini client is configured and mock_mode is off."""
-        return self._configured and not settings.mock_mode
+        """True when a real Gemini client is configured."""
+        return self._configured
 
     def analyze_payment_failure(self, payment: Payment) -> dict:
         """
@@ -96,13 +95,13 @@ class AIService:
         Returns dict with: action_type, confidence_score, reasoning, ai_mode.
         Raises RuntimeError on Gemini failure (callers handle it).
         """
-        if self.is_live:
-            result = self._real_analysis(payment)
-        else:
-            result = self._mock_analysis(payment)
+        if not self.is_live:
+            raise RuntimeError("Gemini is not configured. Live AI is required.")
+        
+        result = self._real_analysis(payment)
 
         # Tag which mode was used — stored in audit log, never sent to client
-        result["ai_mode"] = "live" if self.is_live else "mock"
+        result["ai_mode"] = "live"
         return result
 
     # ------------------------------------------------------------------
@@ -151,14 +150,12 @@ class AIService:
 
         except Exception as e:
             error_type = type(e).__name__
-            logger.warning(
-                "Gemini API call failed (%s: %s). Falling back to mock heuristic mode.",
+            logger.error(
+                "Gemini API call failed (%s: %s).",
                 error_type,
                 str(e),
             )
-            mock_res = self._mock_analysis(payment)
-            mock_res["reasoning"] += " (Intelligent fallback applied)"
-            return mock_res
+            raise RuntimeError(f"Gemini API call failed: {error_type} - {str(e)}") from e
 
     def _validate_response(self, raw_content: str) -> dict:
         """Parse and validate the model's JSON response."""
@@ -196,31 +193,6 @@ class AIService:
             "reasoning": str(data.get("reasoning", "No reasoning provided."))[:500],
         }
 
-    def _mock_analysis(self, payment: Payment) -> dict:
-        """Deterministic heuristic fallback when Gemini is not configured."""
-        if payment.failure_code == "INSUFFICIENT_FUNDS":
-            return {
-                "action_type": ActionType.SMART_RETRY.value,
-                "confidence_score": 85,
-                "reasoning": "High likelihood of success if retried on payday or next cycle.",
-            }
-        elif payment.failure_code == "EXPIRED_CARD":
-            return {
-                "action_type": ActionType.EMAIL_REMINDER.value,
-                "confidence_score": 95,
-                "reasoning": "Customer needs to update their payment method.",
-            }
-        elif payment.amount > 500:
-            return {
-                "action_type": ActionType.MANUAL_REVIEW.value,
-                "confidence_score": 70,
-                "reasoning": "High value transaction — better to review manually.",
-            }
-        return {
-            "action_type": ActionType.DISCOUNT_OFFER.value,
-            "confidence_score": 60,
-            "reasoning": "Default fallback: offer a discount to recover this payment.",
-        }
 
 
 ai_service = AIService()

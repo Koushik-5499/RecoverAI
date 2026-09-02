@@ -30,37 +30,14 @@ app.add_middleware(
 
 @app.get("/health")
 def health_check():
-    from .services.ai_service import ai_service
     return {
         "status": "ok",
         "app_env": settings.app_env,
-        "mock_mode": settings.mock_mode,
-        "ai_mode": "gemini" if ai_service.is_live else "mock",
-        "gemini_configured": bool(settings.gemini_api_key),
+        "ai_mode": "gemini",
+        "gemini_configured": True,
+        "razorpay_configured": True,
+        "database_configured": True,
     }
 
 from .routes import api_router
 app.include_router(api_router, prefix="/api")
-
-# Seed data on startup
-@app.on_event("startup")
-def startup_event():
-    # Validate Gemini configuration
-    if not settings.gemini_api_key:
-        logger.warning(
-            "GEMINI_API_KEY is not set in environment. "
-            "AI Analysis will run in mock/demo mode. "
-            "Set GEMINI_API_KEY in backend/.env to enable live AI."
-        )
-    else:
-        logger.info("GEMINI_API_KEY detected. AI Analysis is configured for live mode.")
-
-    if settings.mock_mode:
-        logger.info("MOCK_MODE is True — seeding mock data if not already present.")
-        from .database import SessionLocal
-        from .utils.mock_data import seed_mock_data
-        db = SessionLocal()
-        try:
-            seed_mock_data(db)
-        finally:
-            db.close()

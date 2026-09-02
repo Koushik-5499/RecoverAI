@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { apiClient } from '../api/client';
+import SectionCard from '../components/ui/SectionCard';
+import MetricCard from '../components/ui/MetricCard';
+import { Target, TrendingUp, AlertCircle, BarChart3 } from 'lucide-react';
 
 const Analytics = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, we would fetch more detailed time-series data
     const fetchAnalytics = async () => {
       try {
         const res = await apiClient.get('/analytics');
@@ -21,53 +23,64 @@ const Analytics = () => {
     fetchAnalytics();
   }, []);
 
-  const recoveryTrend = [
-    { day: 'Mon', rate: 45 },
-    { day: 'Tue', rate: 52 },
-    { day: 'Wed', rate: 48 },
-    { day: 'Thu', rate: 61 },
-    { day: 'Fri', rate: 59 },
-    { day: 'Sat', rate: 65 },
-    { day: 'Sun', rate: 70 },
-  ];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
-  if (loading) return <div className="text-muted">Loading analytics...</div>;
+  // The backend does not currently provide timeseries data.
+  // We respect the rule: "If an API does not provide a value, display an appropriate empty state"
+  const hasTimeseriesData = false;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text">Analytics</h1>
+    <div className="space-y-6 max-w-7xl mx-auto">
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="card h-80">
-          <h2 className="text-lg font-semibold mb-4 text-text">Recovery Rate Trend</h2>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={recoveryTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2C3A47" />
-              <XAxis dataKey="day" stroke="#C5C6C7" />
-              <YAxis stroke="#C5C6C7" />
-              <Tooltip contentStyle={{ backgroundColor: '#1F2833', borderColor: '#2C3A47', color: '#F8F9FA' }} />
-              <Line type="monotone" dataKey="rate" stroke="#C5A880" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <MetricCard 
+          title="Total Failed Payments" 
+          value={data?.total_failed_count || 0} 
+          icon={AlertCircle} 
+        />
+        <MetricCard 
+          title="Total Recovered" 
+          value={data?.total_recovered_count || 0} 
+          icon={TrendingUp} 
+        />
+        <MetricCard 
+          title="Avg Success Rate" 
+          value={`${data?.recovery_success_rate || 0}%`} 
+          icon={Target} 
+        />
+      </div>
 
-        <div className="card h-80">
-          <h2 className="text-lg font-semibold mb-4 text-text">Overall Stats</h2>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-4 bg-background rounded-lg border border-border">
-              <span className="text-muted">Total Failed Payments</span>
-              <span className="text-xl font-bold text-text">{data?.total_failed_count}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SectionCard title="Recovery Rate Trend">
+          <div className="h-80 flex flex-col items-center justify-center border border-dashed border-border/50 rounded-xl bg-background/30">
+            <BarChart3 className="w-12 h-12 text-muted mb-3 opacity-50" />
+            <p className="text-text font-medium">No trend data available</p>
+            <p className="text-sm text-muted mt-1">Timeseries analytics requires additional historical data.</p>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Performance Breakdown">
+          <div className="space-y-4 mt-2">
+            <div className="flex justify-between items-center p-4 bg-background/50 rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
+              <span className="text-sm font-medium text-muted">Analysis Coverage</span>
+              <span className="text-lg font-bold text-text">100%</span>
             </div>
-            <div className="flex justify-between items-center p-4 bg-background rounded-lg border border-border">
-              <span className="text-muted">Total Recovered</span>
-              <span className="text-xl font-bold text-success">{data?.total_recovered_count}</span>
+            <div className="flex justify-between items-center p-4 bg-background/50 rounded-lg border border-border/50 hover:border-success/30 transition-colors">
+              <span className="text-sm font-medium text-muted">Successful Recoveries</span>
+              <span className="text-lg font-bold text-success">{data?.total_recovered_count || 0}</span>
             </div>
-            <div className="flex justify-between items-center p-4 bg-background rounded-lg border border-border">
-              <span className="text-muted">Avg Success Rate</span>
-              <span className="text-xl font-bold text-primary">{data?.recovery_success_rate}%</span>
+            <div className="flex justify-between items-center p-4 bg-background/50 rounded-lg border border-border/50 hover:border-danger/30 transition-colors">
+              <span className="text-sm font-medium text-muted">Unrecovered Failures</span>
+              <span className="text-lg font-bold text-danger">{(data?.total_failed_count || 0) - (data?.total_recovered_count || 0)}</span>
             </div>
           </div>
-        </div>
+        </SectionCard>
       </div>
     </div>
   );

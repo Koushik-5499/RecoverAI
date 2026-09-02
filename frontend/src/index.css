@@ -27,31 +27,65 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-primary text-background font-medium py-2 px-4 rounded-md hover:bg-primaryHover transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50;
+    @apply bg-primary text-background font-medium py-2 px-4 rounded-lg hover:bg-primaryHover transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-lg shadow-primary/20 hover:shadow-primary/40;
   }
   .btn-secondary {
-    @apply bg-surface border border-border text-text font-medium py-2 px-4 rounded-md hover:bg-surface/80 transition-colors focus:outline-none focus:ring-2 focus:ring-muted/50;
+    @apply bg-surface border border-border text-text font-medium py-2 px-4 rounded-lg hover:bg-surface/80 transition-all focus:outline-none focus:ring-2 focus:ring-muted/50 hover:border-muted;
   }
   .card {
-    @apply bg-surface rounded-xl border border-border p-6 shadow-lg;
+    @apply bg-surface rounded-xl border border-border/50 p-6 shadow-xl hover:border-border transition-all duration-300;
+  }
+  .card-hover {
+    @apply hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/5;
   }
   .input {
-    @apply bg-background border border-border rounded-md px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+    @apply bg-background border border-border rounded-lg px-4 py-2.5 text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all;
+  }
+  .text-gradient-gold {
+    @apply bg-gradient-to-r from-primary to-yellow-200 bg-clip-text text-transparent;
+  }
+  .badge-success {
+    @apply bg-success/10 text-success border border-success/20 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-warning {
+    @apply bg-warning/10 text-warning border border-warning/20 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-danger {
+    @apply bg-danger/10 text-danger border border-danger/20 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-neutral {
+    @apply bg-muted/10 text-muted border border-muted/20 px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
 }
 
 /* Custom Scrollbar for dark theme */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0B0C10;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: #2C3A47;
-  border-radius: 4px;
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #C5A880;
+  background: #45A29E;
+}
+
+/* Recharts Customization */
+.recharts-tooltip-cursor {
+  fill: #1F2833;
+}
+.recharts-cartesian-grid-horizontal line, .recharts-cartesian-grid-vertical line {
+  stroke: #2C3A47;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
+}
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
